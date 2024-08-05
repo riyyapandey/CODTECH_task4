@@ -1,0 +1,51 @@
+import pandas as pd
+import re
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import matplotlib.pyplot as plt
+
+# Download NLTK resources if not already downloaded
+nltk.download('vader_lexicon')
+
+# Function to preprocess text
+def preprocess_text(text):
+    text = text.lower()  # Convert to lowercase
+    text = re.sub(r'http\S+|www\S+', '', text)  # Remove URLs
+    text = re.sub(r'@\w+', '', text)  # Remove mentions
+    text = re.sub(r'#', '', text)  # Remove hashtags
+    text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
+    text = re.sub(r'\d+', '', text)  # Remove digits
+    text = text.strip()  # Remove leading/trailing whitespace
+    return text
+
+# Function to perform sentiment analysis
+def perform_sentiment_analysis(text):
+    sia = SentimentIntensityAnalyzer()
+    sentiment = sia.polarity_scores(text)['compound']
+    return sentiment
+
+# Load data from CSV file with specified encoding (adjust encoding as necessary)
+df = pd.read_csv('tweets.csv', encoding='latin-1')
+
+# Check column names to ensure they match the expected format
+print(df.columns)
+
+# Preprocess text from 'Caption' column and perform sentiment analysis
+df['clean_text'] = df['Caption'].apply(preprocess_text)
+df['sentiment'] = df['clean_text'].apply(perform_sentiment_analysis)
+
+# Calculate average sentiment score
+average_sentiment = df['sentiment'].mean()
+print(f'Average Sentiment Score: {average_sentiment:.2f}')
+
+# Plot sentiment trends over time with average sentiment line
+plt.figure(figsize=(10, 6))
+plt.plot(df.index, df['sentiment'], marker='o', linestyle='-', color='b', label='Sentiment Score')
+plt.axhline(y=average_sentiment, color='r', linestyle='--', label='Average Sentiment')
+plt.title('Sentiment Analysis of Captions Over Time')
+plt.xlabel('Caption Index')
+plt.ylabel('Sentiment Score')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
